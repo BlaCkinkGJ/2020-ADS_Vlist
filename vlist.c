@@ -231,17 +231,26 @@ ret:
         return node;
 }
 
+/**
+ * @brief node 값을 vlist의 sublist에 추가한다.
+ * 
+ * @param vlist 값을 넣고자하는 vlist이다.
+ * @param node 값을 넣을 node이다.
+ * @return int 성공한 경우 NO_ERR이 반환된다.
+ */
 int vlist_add_sublist_node(struct vlist *vlist, const struct sublist_node *node)
 {
         struct sublist *list_ptr = vlist->head;
         struct sublist_node *target_node = NULL;
 
-        if (vlist->use_checkpoint == true || *(vlist->sublist_offset) == 0) {
+        if (unlikely(vlist->use_checkpoint) || *(vlist->sublist_offset) == 0) {
                 list_ptr = sublist_alloc(*(vlist->last_sublist_size) << 1);
                 if (list_ptr == NULL) {
                         return ALLOC_FAILED;
                 }
-                list_ptr->next_offset = *(vlist->sublist_offset);
+                list_ptr->next_offset = vlist->checkpoint_offset;
+                if (likely(!vlist->use_checkpoint))
+                        list_ptr->next_offset = *(vlist->sublist_offset);
                 list_ptr->next = vlist->head;
                 list_ptr->ref_count++;
 

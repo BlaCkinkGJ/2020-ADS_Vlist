@@ -42,7 +42,7 @@ void test(void)
                 test_arr[i] = value;
         }
 
-        pr_info("ADD TEST PASSED....\n");
+        pr_info("ADD TEST 1 PASSED....\n");
 
         for (int i = 0; i < 100000; i++) {
                 int index = rand() % TEST_SIZE;
@@ -53,7 +53,7 @@ void test(void)
                 }
         }
 
-        pr_info("COMPARE TEST PASSED....\n");
+        pr_info("COMPARE TEST 1 PASSED....\n");
 
         for (int index = TEST_SIZE - 1; index >= 0; index--) {
                 int value1 =
@@ -71,7 +71,32 @@ void test(void)
                 }
         }
 
-        pr_info("REFERENCE TEST PASSED....\n");
+        pr_info("REFERENCE TEST PASSED....(vlist2 size: %I64u)\n",
+                vlist_size(vlist2));
+
+        for (int i = 0; i < TEST_SIZE; i++) {
+                int value = i; //rand();
+                struct sublist_node node = {
+                        .size = sizeof(int),
+                        .ivalue = value,
+                };
+                vlist_add_sublist_node(vlist2, &node);
+                test_arr[i] = value;
+        }
+
+        pr_info("ADD TEST 2 PASSED....\n");
+
+        for (int i = 0; i < 100000; i++) {
+                int index = rand() % TEST_SIZE;
+                int value = vlist_get_sublist_node(vlist2, index)->ivalue;
+                if (value != test_arr[TEST_SIZE - index - 1]) {
+                        pr_info("[ERROR] %d location %d <=> %d\n", index, value,
+                                test_arr[TEST_SIZE - index - 1]);
+                }
+        }
+
+        pr_info("COMPARE TEST 2 PASSED....(vlist2 size: %I64u)\n",
+                vlist_size(vlist2));
 
         vlist_dealloc(vlist);
 }
