@@ -33,6 +33,7 @@ void test(void)
                 int value = rand();
                 struct sublist_node node = {
                         .size = sizeof(int),
+                        .is_primitive = true,
                         .ivalue = value,
                 };
                 vlist_add_sublist_node(vlist, &node);
@@ -75,9 +76,10 @@ void test(void)
                 vlist_size(vlist2));
 
         for (int i = 0; i < TEST_SIZE; i++) {
-                int value = i; //rand();
+                int value = rand();
                 struct sublist_node node = {
                         .size = sizeof(int),
+                        .is_primitive = true,
                         .ivalue = value,
                 };
                 vlist_add_sublist_node(vlist2, &node);
@@ -97,6 +99,49 @@ void test(void)
 
         pr_info("COMPARE TEST 2 PASSED....(vlist2 size: %I64u)\n",
                 vlist_size(vlist2));
+
+        for (int size = TEST_SIZE; size > 0; size--) {
+                int index = rand() % size;
+                vlist_remove_sublist_node(vlist, index);
+        }
+        pr_info("REMOVE TEST 1 PASSED....(vlist size: %I64u, %p)\n",
+                vlist_size(vlist), vlist);
+
+        for (int i = 0; i < TEST_SIZE; i++) {
+                int value = i;
+                struct sublist_node node = {
+                        .size = sizeof(int),
+                        .is_primitive = true,
+                        .ivalue = value,
+                };
+                vlist_add_sublist_node(vlist, &node);
+                test_arr[i] = value;
+        }
+
+        pr_info("RE-ADD TEST 1 PASSED....\n");
+
+        for (int i = 0; i < TEST_SIZE; i++) {
+                int index = i;
+                int value = vlist_get_sublist_node(vlist, index)->ivalue;
+                if (value != test_arr[TEST_SIZE - index - 1]) {
+                        pr_info("[ERROR] %d location %d <=> %d\n", index, value,
+                                test_arr[TEST_SIZE - index - 1]);
+                }
+        }
+
+        pr_info("RE-COMPARE TEST 1 PASSED....\n");
+
+        struct sublist_node *node;
+        for (int size = TEST_SIZE; size > 0; size--) {
+                int remove_index, find_index;
+                remove_index = rand() % size;
+                vlist_remove_sublist_node(vlist, remove_index);
+                if (size - 1 > 0) {
+                        find_index = rand() % (size - 1);
+                        node = vlist_get_sublist_node(vlist, find_index);
+                }
+        }
+        pr_info("REMOVE AND GET TEST PASSED...\n");
 
         vlist_dealloc(vlist);
 }
