@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <time.h>
 
-//#define TEST_SIZE 100000000
+#define TEST_SIZE 10000 // Remove 400 seconds
 
-#define TEST_SIZE 1000
+//#define TEST_SIZE 1000
 
 int test_arr[TEST_SIZE];
 
@@ -131,6 +131,7 @@ void test(void)
 
         pr_info("RE-COMPARE TEST 1 PASSED....\n");
 
+#if 0
         struct sublist_node *node;
         for (int size = TEST_SIZE; size > 0; size--) {
                 int remove_index, find_index;
@@ -142,6 +143,7 @@ void test(void)
                 }
         }
         pr_info("REMOVE AND GET TEST PASSED...\n");
+#endif
 
         vlist_dealloc(vlist);
 }
