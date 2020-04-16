@@ -217,6 +217,7 @@ static struct sublist_node *sublist_get_node(struct sublist *sublist,
         if (sublist->nr_invalid == 0) {
                 node = &sublist->nodes[offset + find_pos];
         } else {
+#ifdef RANDOMIZE_ERASE
                 size_t pos, target_pos = 0;
                 for (pos = offset; pos < sublist->size; pos++) {
                         node = &sublist->nodes[pos];
@@ -227,6 +228,9 @@ static struct sublist_node *sublist_get_node(struct sublist *sublist,
                                 target_pos++;
                         }
                 } // end of for
+#else
+				node = &sublist->nodes[offset + find_pos + sublist->nr_invalid];
+#endif
         }
         return node;
 }

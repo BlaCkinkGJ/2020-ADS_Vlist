@@ -1,3 +1,5 @@
+#define TEST
+
 #include "vlist.h"
 #include <stdlib.h>
 #include <time.h>
@@ -5,7 +7,16 @@
 #ifdef TEST
 #include <string.h>
 
-#define TEST_SIZE 10000
+#define TEST_SIZE 10000000
+
+/**> TEST 관련 매크로 설정 부분 */
+// #define RANDOMIZE_TEST
+
+#ifdef TEST
+#define STR_SIZE 256
+#endif
+
+
 #endif
 
 void test(void);

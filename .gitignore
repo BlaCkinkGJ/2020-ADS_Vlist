@@ -76,3 +76,4 @@ trivial.exe
 normal.exe
 *.log
 tags
+*.data

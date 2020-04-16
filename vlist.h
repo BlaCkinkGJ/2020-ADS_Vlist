@@ -23,6 +23,11 @@ extern "C" {
 #define unlikely(x) (x)
 #endif
 
+/**> 옵션 리스트 */
+// #define DEBUG
+// #define RANDOMIZE_ERASE
+
+/**> 에러 종류들*/
 #define NO_ERR 0
 #define ALLOC_FAILED -1
 #define DEALLOC_FAILED -2
@@ -32,15 +37,7 @@ extern "C" {
 #define REMOVE_FAILED -6
 #define REF_OVERFLOW -7
 
-// #define DEBUG
 
-/**> TEST 관련 매크로 설정 부분 */
-#define TEST
-//#define RANDOMIZE_TEST
-
-#ifdef TEST
-#define STR_SIZE 256
-#endif
 
 #define pr_info(msg, ...)                                                      \
         fprintf(stderr, "[{%lfs} %s(%s):%d] " msg,                             \
