@@ -176,14 +176,14 @@ size_t vlist_size(struct vlist *vlist)
         size_of_vlist -= vlist->sublist_nr_invalid;
 
 #ifdef DEBUG
-        pr_info("[INFO] %I64d %I64d\n", *(vlist->last_sublist_size),
-                *(vlist->sublist_offset));
+        pr_info("[INFO] " SIZE_FORMAT " " SIZE_FORMAT "\n",
+                *(vlist->last_sublist_size), *(vlist->sublist_offset));
 #endif
 
         while (list_ptr->next != NULL) {
 #ifdef DEBUG
-                pr_info("[INFO] %I64d %I64d\n", list_ptr->next->size,
-                        list_ptr->next_offset);
+                pr_info("[INFO] " SIZE_FORMAT " " SIZE_FORMAT "\n",
+                        list_ptr->next->size, list_ptr->next_offset);
 #endif
                 size_of_vlist += list_ptr->next->size - list_ptr->next_offset;
                 size_of_vlist -= list_ptr->next->nr_invalid;

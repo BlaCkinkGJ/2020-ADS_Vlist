@@ -2,24 +2,32 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define TEST_SIZE 10000 // Remove 400 seconds
+#ifdef TEST
+#include <string.h>
 
-//#define TEST_SIZE 1000
-
-int test_arr[TEST_SIZE];
+#define TEST_SIZE 100000
+#endif
 
 void test(void);
 
 int main(void)
 {
+#ifdef TEST
         test();
+#endif
         return 0;
 }
 
+#ifdef TEST
 void test(void)
 {
         struct vlist *vlist, *vlist2;
         int splice_position;
+        int *int_arr = (int *)malloc(TEST_SIZE * sizeof(int));
+        char **str_arr = (char **)malloc(TEST_SIZE * sizeof(char *));
+        for (int i = 0; i < TEST_SIZE; i++) {
+                str_arr[i] = (char *)malloc(STR_SIZE * sizeof(char));
+        }
 
         srand(time(NULL));
 
@@ -40,21 +48,23 @@ void test(void)
                 if (i == splice_position) {
                         vlist2 = vlist_alloc(vlist->head);
                 }
-                test_arr[i] = value;
+                int_arr[i] = value;
         }
 
-        pr_info("ADD TEST 1 PASSED....\n");
+        pr_info("ADD TEST 1 PASSED....(vlist size: " SIZE_FORMAT ")\n",
+                vlist_size(vlist));
 
         for (int i = 0; i < 100000; i++) {
                 int index = rand() % TEST_SIZE;
                 int value = vlist_get_sublist_node(vlist, index)->ivalue;
-                if (value != test_arr[TEST_SIZE - index - 1]) {
+                if (value != int_arr[TEST_SIZE - index - 1]) {
                         pr_info("[ERROR] %d location %d <=> %d\n", index, value,
-                                test_arr[TEST_SIZE - index - 1]);
+                                int_arr[TEST_SIZE - index - 1]);
                 }
         }
 
-        pr_info("COMPARE TEST 1 PASSED....\n");
+        pr_info("COMPARE TEST 1 PASSED....(vlist size: " SIZE_FORMAT ")\n",
+                vlist_size(vlist));
 
         for (int index = TEST_SIZE - 1; index >= 0; index--) {
                 int value1 =
@@ -65,14 +75,15 @@ void test(void)
                                              vlist2, splice_position - index)
                                              ->ivalue;
                         if (value1 != value2) {
-                                pr_info("[ERROR] %d location %d <=> %d (size:%I64u)\n",
+                                pr_info("[ERROR] %d location %d <=> %d (size:" SIZE_FORMAT
+                                        ")\n",
                                         index, value1, value2,
                                         vlist_size(vlist2));
                         }
                 }
         }
 
-        pr_info("REFERENCE TEST PASSED....(vlist2 size: %I64u)\n",
+        pr_info("REFERENCE TEST PASSED....(vlist2 size: " SIZE_FORMAT ")\n",
                 vlist_size(vlist2));
 
         for (int i = 0; i < TEST_SIZE; i++) {
@@ -83,67 +94,87 @@ void test(void)
                         .ivalue = value,
                 };
                 vlist_add_sublist_node(vlist2, &node);
-                test_arr[i] = value;
+                int_arr[i] = value;
         }
 
-        pr_info("ADD TEST 2 PASSED....\n");
+        pr_info("ADD TEST 2 PASSED....(vlist2 size: " SIZE_FORMAT ")\n",
+                vlist_size(vlist2));
 
         for (int i = 0; i < 100000; i++) {
                 int index = rand() % TEST_SIZE;
                 int value = vlist_get_sublist_node(vlist2, index)->ivalue;
-                if (value != test_arr[TEST_SIZE - index - 1]) {
+                if (value != int_arr[TEST_SIZE - index - 1]) {
                         pr_info("[ERROR] %d location %d <=> %d\n", index, value,
-                                test_arr[TEST_SIZE - index - 1]);
+                                int_arr[TEST_SIZE - index - 1]);
                 }
         }
 
-        pr_info("COMPARE TEST 2 PASSED....(vlist2 size: %I64u)\n",
+        pr_info("COMPARE TEST 2 PASSED....(vlist2 size: " SIZE_FORMAT ")\n",
                 vlist_size(vlist2));
 
         for (int size = TEST_SIZE; size > 0; size--) {
+#ifdef RANDOMIZE_TEST
                 int index = rand() % size;
                 vlist_remove_sublist_node(vlist, index);
+#else
+                vlist_remove_sublist_node(vlist, 0);
+#endif
         }
-        pr_info("REMOVE TEST 1 PASSED....(vlist size: %I64u, %p)\n",
+        pr_info("REMOVE TEST 1 PASSED....(vlist size: " SIZE_FORMAT ", %p)\n",
                 vlist_size(vlist), vlist);
 
         for (int i = 0; i < TEST_SIZE; i++) {
-                int value = i;
+                char *buffer = (char *)malloc(256 * sizeof(char));
+                sprintf(buffer, "value ==> %d", i);
                 struct sublist_node node = {
                         .size = sizeof(int),
-                        .is_primitive = true,
-                        .ivalue = value,
+                        .is_primitive = false,
+                        .buffer = buffer,
                 };
                 vlist_add_sublist_node(vlist, &node);
-                test_arr[i] = value;
+                sprintf(str_arr[i], "value ==> %d", i);
         }
 
-        pr_info("RE-ADD TEST 1 PASSED....\n");
+        pr_info("RE-ADD TEST 1 PASSED....(vlist size: " SIZE_FORMAT ")\n",
+                vlist_size(vlist));
 
         for (int i = 0; i < TEST_SIZE; i++) {
                 int index = i;
-                int value = vlist_get_sublist_node(vlist, index)->ivalue;
-                if (value != test_arr[TEST_SIZE - index - 1]) {
-                        pr_info("[ERROR] %d location %d <=> %d\n", index, value,
-                                test_arr[TEST_SIZE - index - 1]);
+                const char *value =
+                        vlist_get_sublist_node(vlist, index)->buffer;
+                if (strcmp(value, str_arr[TEST_SIZE - index - 1])) {
+                        pr_info("[ERROR] %d location %s <=> %s\n", index, value,
+                                str_arr[TEST_SIZE - index - 1]);
                 }
         }
 
-        pr_info("RE-COMPARE TEST 1 PASSED....\n");
+        pr_info("RE-COMPARE TEST 1 PASSED....(vlist size: " SIZE_FORMAT ")\n",
+                vlist_size(vlist));
 
-#if 0
         struct sublist_node *node;
         for (int size = TEST_SIZE; size > 0; size--) {
-                int remove_index, find_index;
+                int remove_index = 0, find_index;
+#ifdef RANDOMIZE_TEST
                 remove_index = rand() % size;
+#endif
                 vlist_remove_sublist_node(vlist, remove_index);
                 if (size - 1 > 0) {
                         find_index = rand() % (size - 1);
                         node = vlist_get_sublist_node(vlist, find_index);
+                        if (node == NULL) {
+                                pr_info("NULL detected\n");
+                        }
                 }
         }
-        pr_info("REMOVE AND GET TEST PASSED...\n");
-#endif
+        pr_info("REMOVE AND GET TEST PASSED...(vlist size: " SIZE_FORMAT ")\n",
+                vlist_size(vlist));
 
         vlist_dealloc(vlist);
+
+        free(int_arr);
+        for (int i = 0; i < TEST_SIZE; i++) {
+                free(str_arr[i]);
+        }
+        free(str_arr);
 }
+#endif

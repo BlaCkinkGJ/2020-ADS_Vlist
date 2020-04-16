@@ -1,9 +1,19 @@
 #ifndef VLIST_H__
 #define VLIST_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stdio.h>
 #include <stdbool.h>
 #include <time.h>
+
+#ifdef _WIN32
+#define SIZE_FORMAT "%I64u"
+#else
+#define SIZE_FORMAT "%I64lu"
+#endif
 
 #ifdef __GNUC__
 #define likely(x) __builtin_expect(!!(x), 1)
@@ -20,6 +30,14 @@
 #define BUFFER_IS_EMPTY -4
 #define FIND_FAILED -5
 #define REMOVE_FAILED -6
+
+/**> TEST 관련 매크로 설정 부분 */
+#define TEST
+//#define RANDOMIZE_TEST
+
+#ifdef TEST
+#define STR_SIZE 256
+#endif
 
 #define pr_info(msg, ...)                                                      \
         fprintf(stderr, "[{%lfs} %s(%s):%d] " msg,                             \
@@ -86,5 +104,9 @@ struct sublist_node *vlist_get_sublist_node(struct vlist *vlist,
                                             const size_t index);
 int vlist_add_sublist_node(struct vlist *vlist, struct sublist_node *node);
 int vlist_remove_sublist_node(struct vlist *vlist, const size_t remove_pos);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

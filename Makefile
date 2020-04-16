@@ -5,6 +5,11 @@ CFLAGS=-g -Wall -Werror #-D DEBUG
 SRCS=main.c vlist.c
 OBJS=main.o vlist.o
 TARGET=vlist
+OSFLAG=
+
+ifneq ($(OS),Windows_NT)
+	CC=gcc
+endif
 
 all: $(TARGET)
 
