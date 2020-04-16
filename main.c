@@ -16,7 +16,6 @@
 #define STR_SIZE 256
 #endif
 
-
 #endif
 
 void test(void);

@@ -70,7 +70,7 @@ static int sublist_dealloc(struct sublist *list, const bool force)
 {
         const size_t size = list->size;
         size_t node_index = 0;
-		int ret = REF_OVERFLOW;
+        int ret = REF_OVERFLOW;
 
         list->ref_count--;
 
@@ -90,7 +90,7 @@ static int sublist_dealloc(struct sublist *list, const bool force)
                 }
 
                 free(list);
-				ret = NO_ERR;
+                ret = NO_ERR;
         }
 
         return ret;
@@ -157,9 +157,9 @@ int vlist_dealloc(struct vlist *vlist)
         while (vlist->head) {
                 next_sublist = vlist->head->next;
                 ret = sublist_dealloc(vlist->head, true);
-				if (ret == REF_OVERFLOW) {
-					break;
-				}
+                if (ret == REF_OVERFLOW) {
+                        break;
+                }
                 if (ret != NO_ERR) {
                         pr_info("[ERROR] %s", get_err_msg(ret));
                         return ret;
@@ -229,7 +229,7 @@ static struct sublist_node *sublist_get_node(struct sublist *sublist,
                         }
                 } // end of for
 #else
-				node = &sublist->nodes[offset + find_pos + sublist->nr_invalid];
+                node = &sublist->nodes[offset + find_pos + sublist->nr_invalid];
 #endif
         }
         return node;

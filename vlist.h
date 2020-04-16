@@ -37,8 +37,6 @@ extern "C" {
 #define REMOVE_FAILED -6
 #define REF_OVERFLOW -7
 
-
-
 #define pr_info(msg, ...)                                                      \
         fprintf(stderr, "[{%lfs} %s(%s):%d] " msg,                             \
                 ((double)clock() / CLOCKS_PER_SEC), __FILE__, __func__,        \
