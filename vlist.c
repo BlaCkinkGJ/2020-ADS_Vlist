@@ -28,6 +28,13 @@ static struct sublist *sublist_alloc(const size_t nr_nodes)
         new_sublist->nr_invalid = 0;
         new_sublist->next = NULL;
         new_sublist->prev = NULL;
+        new_sublist->ref_count = 0;
+
+        for (size_t i = 0; i < nr_nodes; i++) {
+                new_sublist->nodes[i].is_primitive = false;
+                new_sublist->nodes[i].is_invalid = false;
+                new_sublist->nodes[i].buffer = NULL;
+        }
 
         return new_sublist;
 }
@@ -41,17 +48,11 @@ static struct sublist *sublist_alloc(const size_t nr_nodes)
  */
 static void sublist_node_dealloc(struct sublist_node *node)
 {
-#ifdef DEBUG
-        if (node->gc_state == false) {
-                pr_info("[WARN] %s", get_err_msg(NODE_GC_STATE_IS_FALSE));
-        }
-#endif
-
         node->size = 0;
         node->is_invalid = false;
         if (node->is_primitive || !node->buffer) {
 #ifdef DEBUG
-                pr_info("[WARN] %s", get_err_msg(BUFFER_IS_EMPTY));
+                pr_info("[WARN] %s\n", get_err_msg(BUFFER_IS_EMPTY));
 #endif
                 return;
         }
@@ -69,22 +70,30 @@ static int sublist_dealloc(struct sublist *list, const bool force)
 {
         const size_t size = list->size;
         size_t node_index = 0;
+		int ret = REF_OVERFLOW;
 
-        if (!force && list->nr_invalid != list->size) {
-                pr_info("%s\n", get_err_msg(DEALLOC_FAILED));
-                return DEALLOC_FAILED;
-        }
+        list->ref_count--;
 
-        for (node_index = 0; node_index < size; node_index++) {
-                struct sublist_node *node = &list->nodes[node_index];
-                if (!force && !node->is_invalid) {
-                        pr_info("%s", get_err_msg(DEALLOC_FAILED));
+        if (list->ref_count == 0) {
+                if (!force && list->nr_invalid != list->size) {
+                        pr_info("%s\n", get_err_msg(DEALLOC_FAILED));
                         return DEALLOC_FAILED;
                 }
-                sublist_node_dealloc(node);
+
+                for (node_index = 0; node_index < size; node_index++) {
+                        struct sublist_node *node = &list->nodes[node_index];
+                        if (!force && !node->is_invalid) {
+                                pr_info("%s", get_err_msg(DEALLOC_FAILED));
+                                return DEALLOC_FAILED;
+                        }
+                        sublist_node_dealloc(node);
+                }
+
+                free(list);
+				ret = NO_ERR;
         }
 
-        return NO_ERR;
+        return ret;
 }
 
 /**
@@ -98,8 +107,13 @@ static int sublist_dealloc(struct sublist *list, const bool force)
 struct vlist *vlist_alloc(struct sublist *list)
 {
         const size_t initial_sublist_size = 1;
-        const size_t vlist_size = sizeof(struct vlist);
-        struct vlist *new_vlist = (struct vlist *)malloc(vlist_size);
+        struct vlist *new_vlist = NULL;
+
+        new_vlist = (struct vlist *)malloc(sizeof(struct vlist));
+        if (!new_vlist) {
+                pr_info("%s\n", get_err_msg(ALLOC_FAILED));
+                return NULL;
+        }
 
         new_vlist->use_checkpoint = false;
         new_vlist->head = list;
@@ -120,6 +134,7 @@ struct vlist *vlist_alloc(struct sublist *list)
         }
 
         new_vlist->head->nr_invalid = 0;
+        new_vlist->head->ref_count++;
         new_vlist->sublist_nr_invalid = new_vlist->head->nr_invalid;
         new_vlist->last_sublist_size = &(new_vlist->head->size);
 
@@ -142,6 +157,9 @@ int vlist_dealloc(struct vlist *vlist)
         while (vlist->head) {
                 next_sublist = vlist->head->next;
                 ret = sublist_dealloc(vlist->head, true);
+				if (ret == REF_OVERFLOW) {
+					break;
+				}
                 if (ret != NO_ERR) {
                         pr_info("[ERROR] %s", get_err_msg(ret));
                         return ret;
@@ -162,8 +180,12 @@ int vlist_dealloc(struct vlist *vlist)
  */
 size_t vlist_size(struct vlist *vlist)
 {
-        struct sublist *list_ptr;
+        struct sublist *list_ptr = NULL;
         size_t size_of_vlist;
+
+        if (unlikely(vlist == NULL)) {
+                return 0;
+        }
 
         list_ptr = vlist->head;
         size_of_vlist = *(vlist->last_sublist_size) - vlist->checkpoint_offset;
@@ -175,12 +197,7 @@ size_t vlist_size(struct vlist *vlist)
 
         size_of_vlist -= vlist->sublist_nr_invalid;
 
-#ifdef DEBUG
-        pr_info("[INFO] " SIZE_FORMAT " " SIZE_FORMAT "\n",
-                *(vlist->last_sublist_size), *(vlist->sublist_offset));
-#endif
-
-        while (list_ptr->next != NULL) {
+        while (list_ptr->next != NULL && list_ptr->ref_count > 0) {
 #ifdef DEBUG
                 pr_info("[INFO] " SIZE_FORMAT " " SIZE_FORMAT "\n",
                         list_ptr->next->size, list_ptr->next_offset);
@@ -286,11 +303,13 @@ int vlist_add_sublist_node(struct vlist *vlist, struct sublist_node *node)
                         return ALLOC_FAILED;
                 }
                 list_ptr->next_offset = vlist->checkpoint_offset;
-                if (likely(!vlist->use_checkpoint))
+                if (likely(!vlist->use_checkpoint)) {
                         list_ptr->next_offset = *(vlist->sublist_offset);
+                }
                 list_ptr->next = vlist->head;
                 vlist->head->prev = list_ptr;
                 list_ptr->nr_invalid = 0;
+                list_ptr->ref_count++;
 
                 vlist->last_sublist_size = &(list_ptr->size);
                 vlist->sublist_offset = &(list_ptr->current_offset);
@@ -310,8 +329,17 @@ int vlist_add_sublist_node(struct vlist *vlist, struct sublist_node *node)
         return NO_ERR;
 }
 
-int vlist_remove_sublist_node(struct vlist *vlist, const size_t remove_pos)
+/**
+ * @brief sublist의node에 GC 플래그를 설정하고, GC 대상 sublist를 제거한다.
+ *
+ * @param vlist vlist를 가리키는 포인터 callback 된다.
+ * @param remove_pos 삭제하고자하는 위치이다.
+ *
+ * @note remove_pos가 0인 경우 아닌 경우보다 훨씬 빠르게 동작한다.
+ */
+int vlist_remove_sublist_node(struct vlist **_vlist, const size_t remove_pos)
 {
+        struct vlist *vlist = *_vlist;
         struct sublist_node *node = NULL;
         node = vlist_get_sublist_node(vlist, remove_pos);
         if (!node || node->is_invalid) {
@@ -326,10 +354,10 @@ int vlist_remove_sublist_node(struct vlist *vlist, const size_t remove_pos)
 
         if (vlist_size(vlist) == 0) {
 #ifdef DEBUG
-                pr_info("[INFO] vlist deallocation\n");
+                pr_info("%s", "[INFO] vlist deallocation\n");
 #endif
-                free(vlist);
-                vlist = vlist_alloc(NULL);
+                vlist_dealloc(vlist);
+                *_vlist = vlist_alloc(NULL);
                 if (!vlist) {
                         pr_info("%s\n", get_err_msg(ALLOC_FAILED));
                         return ALLOC_FAILED;
@@ -337,31 +365,5 @@ int vlist_remove_sublist_node(struct vlist *vlist, const size_t remove_pos)
                 return NO_ERR;
         }
 
-        if (node->parent->nr_invalid == node->parent->size) {
-                int ret;
-                struct sublist *prev_sublist = node->parent->prev;
-                struct sublist *next_sublist = node->parent->next;
-
-                if (vlist->head == node->parent) {
-                        next_sublist->prev = NULL;
-
-                        vlist->head = next_sublist;
-                        vlist->sublist_nr_invalid = next_sublist->nr_invalid;
-                        vlist->sublist_offset = &next_sublist->current_offset;
-                        vlist->last_sublist_size = &next_sublist->size;
-                } else {
-                        if (prev_sublist != NULL) {
-                                prev_sublist->next = next_sublist;
-                        }
-                        if (next_sublist != NULL) {
-                                next_sublist->prev = prev_sublist;
-                        }
-                }
-                ret = sublist_dealloc(node->parent, false);
-                if (ret != NO_ERR) {
-                        pr_info("%s\n", get_err_msg(ret));
-                        return ret;
-                }
-        }
         return NO_ERR;
 }

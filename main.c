@@ -5,7 +5,7 @@
 #ifdef TEST
 #include <string.h>
 
-#define TEST_SIZE 100000
+#define TEST_SIZE 10000
 #endif
 
 void test(void);
@@ -45,16 +45,18 @@ void test(void)
                         .ivalue = value,
                 };
                 vlist_add_sublist_node(vlist, &node);
+
                 if (i == splice_position) {
                         vlist2 = vlist_alloc(vlist->head);
                 }
+
                 int_arr[i] = value;
         }
 
         pr_info("ADD TEST 1 PASSED....(vlist size: " SIZE_FORMAT ")\n",
                 vlist_size(vlist));
 
-        for (int i = 0; i < 100000; i++) {
+        for (int i = 0; i < TEST_SIZE; i++) {
                 int index = rand() % TEST_SIZE;
                 int value = vlist_get_sublist_node(vlist, index)->ivalue;
                 if (value != int_arr[TEST_SIZE - index - 1]) {
@@ -115,13 +117,14 @@ void test(void)
         for (int size = TEST_SIZE; size > 0; size--) {
 #ifdef RANDOMIZE_TEST
                 int index = rand() % size;
-                vlist_remove_sublist_node(vlist, index);
+                vlist_remove_sublist_node(&vlist, index);
 #else
-                vlist_remove_sublist_node(vlist, 0);
+                vlist_remove_sublist_node(&vlist, 0);
 #endif
         }
+
         pr_info("REMOVE TEST 1 PASSED....(vlist size: " SIZE_FORMAT ", %p)\n",
-                vlist_size(vlist), vlist);
+                vlist_size(vlist), (void *)vlist);
 
         for (int i = 0; i < TEST_SIZE; i++) {
                 char *buffer = (char *)malloc(256 * sizeof(char));
@@ -157,12 +160,12 @@ void test(void)
 #ifdef RANDOMIZE_TEST
                 remove_index = rand() % size;
 #endif
-                vlist_remove_sublist_node(vlist, remove_index);
+                vlist_remove_sublist_node(&vlist, remove_index);
                 if (size - 1 > 0) {
                         find_index = rand() % (size - 1);
                         node = vlist_get_sublist_node(vlist, find_index);
                         if (node == NULL) {
-                                pr_info("NULL detected\n");
+                                pr_info("%s", "NULL detected\n");
                         }
                 }
         }
@@ -170,6 +173,7 @@ void test(void)
                 vlist_size(vlist));
 
         vlist_dealloc(vlist);
+        vlist_dealloc(vlist2);
 
         free(int_arr);
         for (int i = 0; i < TEST_SIZE; i++) {

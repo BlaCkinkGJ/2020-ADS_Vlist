@@ -74,3 +74,5 @@ doxygen/
 *.out
 trivial.exe
 normal.exe
+*.log
+tags
