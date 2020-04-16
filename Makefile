@@ -1,5 +1,5 @@
 CC=C:\Program Files (x86)\CodeBlocks\MinGW\bin\x86_64-w64-mingw32-gcc.exe
-CFLAGS=-pg -Wall -Werror -Wextra -pedantic #-D DEBUG
+CFLAGS=-pg -Wall -Werror -Wextra #-D DEBUG
 # LDFLAGS=
 # LDLIBS=
 SRCS=main.c vlist.c
@@ -11,6 +11,7 @@ EXE=a.exe
 ifneq ($(OS),Windows_NT)
 	CC=gcc
 	EXE=a.out
+	CFLAGS+=-pedantic 
 endif
 
 all: $(TARGET)
