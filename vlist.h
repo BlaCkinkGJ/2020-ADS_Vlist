@@ -25,7 +25,7 @@ extern "C" {
 
 /**> 옵션 리스트 */
 // #define DEBUG
-// #define RANDOMIZE_ERASE
+#define RANDOMIZE_ERASE
 
 /**> 에러 종류들*/
 #define NO_ERR 0

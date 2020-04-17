@@ -44,7 +44,7 @@ static struct sublist *sublist_alloc(const size_t nr_nodes)
  * 
  * @param node 할당 해제의 대상이 되는 노드 
  * 
- * @note node->gc_state가 false이고, buffer가 빈 경우에도 동작은 한다.
+ * @note node가 가진 정보가 primitive 형식인 경우에는 free를 수행하지 않는다.
  */
 static void sublist_node_dealloc(struct sublist_node *node)
 {
@@ -157,7 +157,8 @@ int vlist_dealloc(struct vlist *vlist)
         while (vlist->head) {
                 next_sublist = vlist->head->next;
                 ret = sublist_dealloc(vlist->head, true);
-                if (ret == REF_OVERFLOW) {
+                if (ret ==
+                    REF_OVERFLOW) { /**> sublist의 ref_count만 감소한 경우 해당 부분이 단말이므로 해제를 종료하도록 한다.*/
                         break;
                 }
                 if (ret != NO_ERR) {
@@ -210,6 +211,15 @@ size_t vlist_size(struct vlist *vlist)
         return size_of_vlist;
 }
 
+/**
+ * @brief sublist에서 offset에 기반하여 find_pos에 위치한 node를 찾도록 한다.
+ *
+ * @param sublist 찾고자 하는 sublist를 가리킨다.
+ * @param offset sublist가 현재 쓰고 있는 위치를 가리킨다.
+ * @param find_pos 사용자가 찾고자 하는 장소를 가리킨다.
+ *
+ * @return struct sublit_node* sublist에서 찾은 node 위치를 반환한다. 만약 찾지 못한 경우에는 NULL이 반환된다.
+ */
 static struct sublist_node *sublist_get_node(struct sublist *sublist,
                                              size_t offset, size_t find_pos)
 {
@@ -218,6 +228,7 @@ static struct sublist_node *sublist_get_node(struct sublist *sublist,
                 node = &sublist->nodes[offset + find_pos];
         } else {
 #ifdef RANDOMIZE_ERASE
+                /**< 한 개라도 invalid 플래그가 설정된 경우 sublist 전체를 읽도록 한다. */
                 size_t pos, target_pos = 0;
                 for (pos = offset; pos < sublist->size; pos++) {
                         node = &sublist->nodes[pos];
@@ -241,6 +252,8 @@ static struct sublist_node *sublist_get_node(struct sublist *sublist,
  * @param vlist 현재 찾고자하는 vlist의 위치를 가진다.
  * @param index 0 부터 시작하는 vlist의 index를 지칭한다.
  * @return struct sublist_node* sublist를 못 찾은 경우에는 NULL을 반환한다.
+ *
+ * @exception NULL FIND_FAIL이 발생한 경우에 NULL 값이 반환된다.
  */
 struct sublist_node *vlist_get_sublist_node(struct vlist *vlist,
                                             size_t find_pos)
