@@ -70,10 +70,12 @@ dkms.conf
 doxygen/
 
 # user defined test file
-*.inp
 *.out
 trivial.exe
 normal.exe
 *.log
 tags
 *.data
+Makefile.C
+test.inp
+backup.*
