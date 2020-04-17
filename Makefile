@@ -4,14 +4,9 @@ CFLAGS=-pg -Wall -Wextra #-D DEBUG
 # LDLIBS=
 OBJS=main.o vlist.o
 TARGET=vlist deque list vector forward
+FILES=vlist.out deque.out list.out vector.out forward.out
 OSFLAG=
 
-ifneq ($(OS),Windows_NT)
-	CC=gcc
-	EXE=a.out
-	CFLAGS+=-pedantic -pg
-endif
->>>>>>> master
 
 all: $(TARGET)
 
@@ -41,4 +36,4 @@ vlist.o: vlist.c
 
 clean:
 	rm *.o
-	rm $(TARGET)
+	rm $(FILES)

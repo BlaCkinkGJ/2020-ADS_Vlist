@@ -17,7 +17,8 @@
 
 #define PRINT_RATIO 25000
 // #define PRINT_FORMAT "%lu/%lu""th %lfs\n", i, N, (double)(end_time - start_time) /CLOCKS_PER_SEC
-#define PRINT_FORMAT "%lu\t%lf\n", i, (double)(end_time - start_time) /CLOCKS_PER_SEC
+#define PRINT_FORMAT                                                           \
+        "%lu\t%lf\n", i, (double)(end_time - start_time) / CLOCKS_PER_SEC
 
 // #define VLIST
 // #define LIST
@@ -141,7 +142,8 @@ int main()
         printf("list %lfs\n", (double)(end_time - start_time) / CLOCKS_PER_SEC);
 #endif
 #ifdef FORWARD_LIST
-        printf("forward list %lfs\n", (double)(end_time - start_time) / CLOCKS_PER_SEC);
+        printf("forward list %lfs\n",
+               (double)(end_time - start_time) / CLOCKS_PER_SEC);
 #endif
         fclose(fp);
         fclose(fp_w);
@@ -177,7 +179,8 @@ int main()
         }
 
         end_time = clock();
-        printf("vector %lfs\n", (double)(end_time - start_time) / CLOCKS_PER_SEC);
+        printf("vector %lfs\n",
+               (double)(end_time - start_time) / CLOCKS_PER_SEC);
         fclose(fp);
         fclose(fp_w);
 #endif
@@ -212,7 +215,8 @@ int main()
         }
 
         end_time = clock();
-        printf("deque %lfs\n", (double)(end_time - start_time) / CLOCKS_PER_SEC);
+        printf("deque %lfs\n",
+               (double)(end_time - start_time) / CLOCKS_PER_SEC);
         fclose(fp);
         fclose(fp_w);
 #endif
