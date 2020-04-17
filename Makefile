@@ -6,6 +6,13 @@ OBJS=main.o vlist.o
 TARGET=vlist deque list vector forward
 OSFLAG=
 
+ifneq ($(OS),Windows_NT)
+	CC=gcc
+	EXE=a.out
+	CFLAGS+=-pedantic -pg
+endif
+>>>>>>> master
+
 all: $(TARGET)
 
 vlist: $(OBJS)
